@@ -275,20 +275,25 @@ EOFNODE
 # START GATEWAY
 # ============================================================
 # Note: R2 backup sync is handled by the Worker's cron trigger
-echo "Starting Moltbot Gateway..."
-echo "Gateway will be available on port 18789"
+# Choose the port Cloudflare assigns, default to 18789 for local use
+GATEWAY_PORT="${PORT:-18789}"
+echo "Gateway will be available on port ${GATEWAY_PORT}"
 
-# Clean up stale lock files
+# Clean up any stale lock files
 rm -f /tmp/clawdbot-gateway.lock 2>/dev/null || true
 rm -f "$CONFIG_DIR/gateway.lock" 2>/dev/null || true
 
+# Set bind mode (Moltworker uses 'lan' by default)
 BIND_MODE="lan"
 echo "Dev mode: ${CLAWDBOT_DEV_MODE:-false}, Bind mode: $BIND_MODE"
 
+# If a gateway token is provided, start the gateway with it; otherwise start without a token
 if [ -n "$CLAWDBOT_GATEWAY_TOKEN" ]; then
-    echo "Starting gateway with token auth..."
-    exec clawdbot gateway --port 18789 --verbose --allow-unconfigured --bind "$BIND_MODE" --token "$CLAWDBOT_GATEWAY_TOKEN"
+  echo "Starting gateway with provided token..."
+  exec clawdbot gateway --port "${GATEWAY_PORT}" --verbose --allow-unconfigured \
+    --bind "$BIND_MODE" --token "$CLAWDBOT_GATEWAY_TOKEN"
 else
-    echo "Starting gateway with device pairing (no token)..."
-    exec clawdbot gateway --port 18789 --verbose --allow-unconfigured --bind "$BIND_MODE"
+  echo "Starting gateway with device pairing (no token)..."
+  exec clawdbot gateway --port "${GATEWAY_PORT}" --verbose --allow-unconfigured \
+    --bind "$BIND_MODE"
 fi
